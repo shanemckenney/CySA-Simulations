@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CySA+ Lab: SIEM Log Sifter Challenge</title>
+    <style>
+        :root {
+            --bg-main: #1e1e2e;
+            --bg-panel: #252538;
+            --bg-dark: #11111b;
+            --bg-inner: #181825;
+            --text-main: #cdd6f4;
+            --text-muted: #a6adc8;
+            --accent: #89b4fa;
+            --danger: #f38ba8;
+            --warning: #fab387;
+            --success: #a6e3a1;
+            --purple: #cba6f7;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1550px;
+            width: 100%;
+            background: var(--bg-panel);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        h1, h2, h3, h4 {
+            color: var(--purple);
+            margin-top: 0;
+        }
+
+        /* Top SIEM Control Dashboard */
+        .siem-dashboard {
+            background: var(--bg-dark);
+            border: 1px solid #45475a;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            background: #313244;
+            color: var(--text-main);
+            border: 1px solid #45475a;
+            padding: 8px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active, .filter-btn:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+            border-color: var(--accent);
+        }
+
+        .budget-box {
+            font-size: 16px;
+            font-weight: bold;
+            padding: 8px 16px;
+            background: rgba(166, 227, 161, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .budget-box.low {
+            background: rgba(243, 139, 168, 0.1);
+            border-color: var(--danger);
+            color: var(--danger);
+            animation: shake 0.3s ease;
+        }
+
+        /* 2/3 and 1/3 Screen Layout Layout Split */
+        .workspace {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        /* SIEM Log Console (Left Pane) */
+        .log-console {
+            background: var(--bg-dark);
+            border: 1px solid #45475a;
+            border-radius: 8px;
+            padding: 15px;
+            height: 640px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .log-table-wrapper {
+            overflow-y: auto;
+            flex-grow: 1;
+            border-radius: 4px;
+            background: var(--bg-inner);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #313244;
+            color: var(--accent);
+            padding: 10px;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            font-family: sans-serif;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr.log-row {
+            border-bottom: 1px solid #313244;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        tr.log-row:hover {
+            background: #2a2b3d;
+        }
+
+        tr.log-row.selected {
+            background: #45475a !important;
+        }
+        
+        tr.log-row.resolved {
+            opacity: 0.5;
+            background: rgba(166, 227, 161, 0.05) !important;
+            border-left: 4px solid var(--success);
+        }
+
+        td {
+            padding: 10px;
+            white-space: nowrap;
+        }
+
+        /* Analyst Triage Box (Right Pane) */
+        .triage-panel {
+            background: var(--bg-dark);
+            border: 1px solid #45475a;
+            border-radius: 8px;
+            padding: 20px;
+            height: 640px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .triage-card {
+            background: var(--bg-inner);
+            border-radius: 6px;
+            padding: 15px;
+            border-left: 4px solid var(--accent);
+            margin-bottom: 15px;
+        }
+
+        .triage-card h4 {
+            margin: 0 0 6px 0;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--accent);
+        }
+
+        select, button.submit-btn {
+            width: 100%;
+            padding: 10px;
+            background: #313244;
+            border: 1px solid #45475a;
+            border-radius: 4px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+
+        button.submit-btn {
+            background: var(--purple);
+            color: var(--bg-dark);
+            border: none;
+            margin-top: 15px;
+        }
+
+        button.submit-btn:hover {
+            opacity: 0.9;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>CySA+ Lab: SIEM Log Sifter Challenge</h1>
+    <p><strong>Mission:</strong> Three distinct threats are hiding inside this data cluster of 20 normal corporate log events. Filter the records, look for hidden patterns, and submit your findings. <strong>Warning:</strong> False alarms waste time and exhaust your operational investigative budget!</p>
+
+    <div class="siem-dashboard">
+        <div class="filter-group">
+            <button class="filter-btn active" onclick="applyFilter('ALL', this)">All Logs</button>
+            <button class="filter-btn" onclick="applyFilter('FIREWALL', this)">Firewall Logs</button>
+            <button class="filter-btn" onclick="applyFilter('AUTH', this)">Auth Logs</button>
+        </div>
+        <div id="budgetBox" class="budget-box">Investigative Budget: 100 Points</div>
+    </div>
+
+    <div class="workspace">
+        
+        <div class="log-console">
+            <div class="log-table-wrapper">
+                <table id="logTable">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Subsystem</th>
+                            <th>Source Address</th>
+                            <th>Destination Address</th>
+                            <th>Protocol / App</th>
+                            <th>Event Summary Payload</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="triage-panel" id="triagePanel">
+            <div style="text-align: center; margin-top: 120px; color: var(--text-muted);">
+                <p style="font-size: 48px; margin: 0;">🖥️</p>
+                <p>Select any suspicious log row from the SIEM console to analyze its payload and escalate the event.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let socBudget = 100;
+    let activeRowId = null;
+    let threatsResolved = 0;
+
+    // The Log Core Dataset (Hiding 3 specific threats)
+    const logDataset = [
+        { id: 1, type: "AUTH", time: "08:30:12", src: "198.51.100.4", dst: "Internal-DC-01", proto: "Kerberos", payload: "user=jsmith | status=SUCCESS | loc=New York, US", malicious: false },
+        { id: 2, type: "FIREWALL", time: "08:31:00", src: "10.0.4.22", dst: "8.8.8.8:53", proto: "UDP / DNS", payload: "action=ALLOW | size=64 bytes", malicious: false },
+        { id: 3, type: "AUTH", time: "08:35:45", src: "203.0.113.88", dst: "Internal-DC-01", proto: "Kerberos", payload: "user=jsmith | status=SUCCESS | loc=Tokyo, JP", malicious: true, threatType: "TRAVEL", reason: "<strong>Impossible Travel:</strong> The user 'jsmith' authenticated from New York, and then just 5 minutes later, successfully authenticated from Tokyo. A human cannot travel that fast—this proves credentials have been intercepted.", fix: "Revoke user active sessions, force an password reset, and enable mandatory Multi-Factor Authentication (MFA)." },
+        { id: 4, type: "FIREWALL", time: "08:40:02", src: "10.0.4.99", dst: "192.168.1.1:443", proto: "TCP / HTTPS", payload: "action=ALLOW | size=1.2 KB", malicious: false },
+        
+        // Beaconing Group (10-second automation sequence)
+        { id: 5, type: "FIREWALL", time: "08:41:10", src: "10.0.4.15", dst: "203.0.113.5:443", proto: "TCP / HTTPS", payload: "action=ALLOW | size=420 bytes", malicious: true, threatType: "BEACON", reason: "<strong>C2 Beaconing:</strong> This host is initiating outbound socket connections to an external IP address at rigid, mathematically identical intervals (exactly every 10 seconds). Normal user traffic is random; fixed timers indicate automated malware checking in with a command server.", fix: "Isolate the internal host from the network segment to halt communication, and pull an EDR memory capture to search for malicious background processes." },
+        { id: 6, type: "FIREWALL", time: "08:41:15", src: "10.0.4.12", dst: "10.0.4.1", proto: "TCP / SMB", payload: "action=ALLOW | file=shared_drive", malicious: false },
+        { id: 7, type: "FIREWALL", time: "08:41:20", src: "10.0.4.15", dst: "203.0.113.5:443", proto: "TCP / HTTPS", payload: "action=ALLOW | size=420 bytes", malicious: true, threatType: "BEACON" },
+        { id: 8, type: "AUTH", time: "08:41:22", src: "10.0.4.55", dst: "Internal-DC-01", proto: "LDAP", payload: "user=bwilson | status=SUCCESS", malicious: false },
+        { id: 9, type: "FIREWALL", time: "08:41:30", src: "10.0.4.15", dst: "203.0.113.5:443", proto: "TCP / HTTPS", payload: "action=ALLOW | size=420 bytes", malicious: true, threatType: "BEACON" },
+        
+        // Massive Exfiltration Spike
+        { id: 10, type: "FIREWALL", time: "08:41:35", src: "10.0.4.80", dst: "192.0.2.205:8080", proto: "TCP / HTTP", payload: "action=ALLOW | outbound_bytes=4815162342", malicious: true, threatType: "EXFIL", reason: "<strong>Data Exfiltration Spike:</strong> A localized staging system (<code>10.0.4.80</code>) has dumped 4.8 Gigabytes of raw outbound transfer data over port 8080 to an unclassified public address. This massive volume spike deviates radically from normal background thresholds.", fix: "Sever the active firewall tracking connection state, block the recipient IP address at the perimeter gateway, and review application log audit trails to determine what database records were copied." },
+        
+        { id: 11, type: "FIREWALL", time: "08:41:40", src: "10.0.4.15", dst: "203.0.113.5:443", proto: "TCP / HTTPS", payload: "action=ALLOW | size=420 bytes", malicious: true, threatType: "BEACON" },
+        { id: 12, type: "FIREWALL", time: "08:42:01", src: "10.0.4.19", dst: "92.242.14.3:80", proto: "TCP / HTTP", payload: "action=ALLOW | size=3.4 KB", malicious: false },
+        { id: 13, type: "FIREWALL", time: "08:42:15", src: "10.0.4.22", dst: "8.8.8.8:53", proto: "UDP / DNS", payload: "action=ALLOW | size=72 bytes", malicious: false },
+        { id: 14, type: "AUTH", time: "08:43:00", src: "10.0.4.101", dst: "Internal-DC-01", proto: "Kerberos", payload: "user=amiller | status=SUCCESS", malicious: false }
+    ];
+
+    function buildTable(filterType) {
+        const tbody = document.getElementById("logTableBody");
+        tbody.innerHTML = "";
+
+        logDataset.forEach(row => {
+            if (filterType !== "ALL" && row.type !== filterType) return;
+
+            const tr = document.createElement("tr");
+            tr.className = `log-row ${row.resolved ? 'resolved' : ''}`;
+            tr.id = `row-${row.id}`;
+            tr.onclick = () => selectRow(row.id);
+
+            tr.innerHTML = `
+                <td>${row.time}</td>
+                <td><strong>[${row.type}]</strong></td>
+                <td>${row.src}</td>
+                <td>${row.dst}</td>
+                <td>${row.proto}</td>
+                <td style="color: var(--text-muted);">${row.payload}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function applyFilter(type, btnElement) {
+        document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+        btnElement.classList.add("active");
+        buildTable(type);
+    }
+
+    function selectRow(id) {
+        activeRowId = id;
+        document.querySelectorAll(".log-row").forEach(r => r.classList.remove("selected"));
+        
+        const selectedRow = document.getElementById(`row-${id}`);
+        if (selectedRow) selectedRow.classList.add("selected");
+
+        const logItem = logDataset.find(r => r.id === id);
+        const panel = document.getElementById("triagePanel");
+
+        if (logItem.resolved) {
+            displayVictory(logItem);
+            return;
+        }
+
+        panel.innerHTML = `
+            <h3>🔍 Incident Triage Investigation</h3>
+            <div class="triage-card">
+                <h4>Raw Record Metadata</h4>
+                <p style="font-family:monospace; color:#fff; font-size:12px;">TIME: ${logItem.time}<br>SRC: ${logItem.src}<br>PAYLOAD: ${logItem.payload}</p>
+            </div>
+
+            <div class="triage-card" style="border-left-color: var(--purple);">
+                <h4>Threat Classification Assessment</h4>
+                <p>If you believe this record indicates an active attack vector, categorize it below:</p>
+                <select id="threatSelect">
+                    <option value="NONE">-- This is safe/normal traffic --</option>
+                    <option value="TRAVEL">User Behavior Anomaly: Impossible Travel</option>
+                    <option value="BEACON">Network Connection Anomaly: Command & Control Beaconing</option>
+                    <option value="EXFIL">Exfiltration Anomaly: Bulk Volume Data Spike</option>
+                </select>
+                <button class="submit-btn" onclick="submitTriage()">Submit Analysis Report</button>
+            </div>
+        `;
+    }
+
+    function submitTriage() {
+        const choice = document.getElementById("threatSelect").value;
+        const logItem = logDataset.find(r => r.id === activeRowId);
+        const budgetBox = document.getElementById("budgetBox");
+
+        // Case A: Correctly matched malicious line
+        if (logItem.malicious && logItem.threatType === choice) {
+            alert("🎯 ALERT VERIFIED: Excellent assessment, analyst!");
+            
+            // Mark matching elements as resolved
+            logDataset.forEach(r => {
+                if(r.threatType === choice) r.resolved = true;
+            });
+            
+            threatsResolved++;
+            socBudget += 10; // Bonus points
+            updateBudgetUI();
+            buildTable("ALL");
+            displayVictory(logItem);
+
+            if(threatsResolved === 3) {
+                triggerGameWin();
+            }
+        } 
+        // Case B: Reported clean traffic as an attack (False Alarm)
+        else if (!logItem.malicious && choice !== "NONE") {
+            alert("❌ FALSE ALARM: That row is completely legitimate background traffic. You wasted investigative resources.");
+            deductBudget(20);
+        }
+        // Case C: Mismatching the type of malicious attack
+        else if (logItem.malicious && choice === "NONE") {
+            alert("⚠️ INVESTIGATION INCOMPLETE: You classified a critical indicator as safe traffic! Look closer at the details.");
+        }
+        else {
+            alert("❌ MISCLASSIFIED: You flagged this as an attack, but selected the wrong threat classification category.");
+            deductBudget(15);
+        }
+    }
+
+    function displayVictory(logItem) {
+        // Find parent template info if current item is a sibling beacon
+        const masterItem = logDataset.find(r => r.threatType === logItem.threatType && r.reason);
+        const panel = document.getElementById("triagePanel");
+        panel.innerHTML = `
+            <h3 style="color: var(--success);">✅ Threat Contained & Logged</h3>
+            <div class="triage-card" style="border-left-color: var(--success);">
+                <h4>Incident Diagnosis</h4>
+                <p>${masterItem.reason}</p>
+            </div>
+            <div class="triage-card" style="border-left-color: var(--accent);">
+                <h4>🛠️ Recommended Mitigation Action</h4>
+                <p>${masterItem.fix}</p>
+            </div>
+        `;
+    }
+
+    function deductBudget(amount) {
+        socBudget -= amount;
+        updateBudgetUI();
+        if (socBudget <= 0) {
+            alert("💀 GAME OVER: Your operational budget has collapsed. You've been reassigned from the Security Operations Center due to excessive false-alarm overhead.");
+            location.reload();
+        }
+    }
+
+    function updateBudgetUI() {
+        const box = document.getElementById("budgetBox");
+        box.textContent = `Investigative Budget: ${socBudget} Points`;
+        if (socBudget <= 40) {
+            box.className = "budget-box low";
+        } else {
+            box.className = "budget-box";
+        }
+    }
+
+    function triggerGameWin() {
+        document.getElementById("triagePanel").innerHTML = `
+            <div style="text-align:center; padding:20px; background: rgba(166,227,161,0.1); border: 2px solid var(--success); border-radius:8px;">
+                <h2 style="color: var(--success); margin:0;">🏆 Tier-1 Tier Secured!</h2>
+                <p>You isolated all embedded threats cleanly while managing operational thresholds. Excellent eye for telemetry correlation!</p>
+            </div>
+        `;
+    }
+
+    // Initialize Game Console
+    buildTable("ALL");
+</script>
+
+</body>
+</html>
