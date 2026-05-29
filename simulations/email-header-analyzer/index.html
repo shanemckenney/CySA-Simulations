@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CySA+ Tactical Lab: Advanced Email Header Triage</title>
+    <style>
+        :root {
+            --bg-main: #1e1e2e;
+            --bg-panel: #252538;
+            --bg-dark: #11111b;
+            --bg-inner: #181825;
+            --text-main: #cdd6f4;
+            --text-muted: #a6adc8;
+            --accent: #89b4fa;
+            --danger: #f38ba8;
+            --warning: #fab387;
+            --success: #a6e3a1;
+            --purple: #cba6f7;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1550px;
+            width: 100%;
+            background: var(--bg-panel);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        h1, h2, h3 {
+            color: var(--purple);
+            margin-top: 0;
+        }
+
+        /* The 3-Panel Layout Grid */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr 0.9fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .panel {
+            background: var(--bg-dark);
+            border: 1px solid #45475a;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 700px;
+            box-sizing: border-box;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 15px;
+            border-bottom: 1px solid #313244;
+            padding-bottom: 5px;
+        }
+
+        /* PANEL 1: Rendered Webmail UI Client */
+        .webmail-client {
+            background: #ffffff;
+            color: #202124;
+            border-radius: 6px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            font-size: 14px;
+            overflow: hidden;
+        }
+        .webmail-header {
+            background: #f1f3f4;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .webmail-subject {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .webmail-meta-line {
+            margin: 4px 0;
+            color: #5f6368;
+        }
+        .webmail-body {
+            padding: 20px;
+            flex-grow: 1;
+            background: #ffffff;
+            line-height: 1.5;
+        }
+        .phish-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #1a73e8;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-top: 15px;
+            transition: background-color 0.2s;
+        }
+        .phish-btn:hover {
+            background-color: #1557b0;
+        }
+        
+        /* PANEL 2: Raw Header Text Console */
+        .raw-console {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            background: var(--bg-inner);
+            padding: 15px;
+            border-radius: 6px;
+            flex-grow: 1;
+        }
+        .header-line {
+            display: block;
+            padding: 3px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border-left: 3px solid transparent;
+        }
+        .header-line:hover {
+            background: #313244;
+        }
+        .header-line.active {
+            background: #45475a;
+            border-left-color: var(--danger);
+            font-weight: bold;
+        }
+
+        /* PANEL 3: Triage Insights Box */
+        .triage-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .info-card {
+            background: var(--bg-inner);
+            border-radius: 6px;
+            padding: 10px 14px;
+            border-left: 4px solid var(--accent);
+        }
+        .info-card h4 {
+            margin: 0 0 4px 0;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .info-card p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.4;
+            color: var(--text-muted);
+        }
+
+        /* Dynamic Cross-Panel Synchronization Classes */
+        .sync-highlight {
+            transition: all 0.3s ease;
+        }
+        .sync-highlight.triggered-glow {
+            outline: 3px solid var(--danger);
+            background-color: rgba(243, 139, 168, 0.15) !important;
+        }
+
+        /* Color-coded tags for the raw console markup */
+        .c-from { color: var(--danger); }
+        .c-spf { color: var(--warning); }
+        .c-dkim { color: var(--accent); }
+        .c-dmarc { color: var(--purple); }
+        .c-link { color: var(--success); }
+    </style>
+<link rel="stylesheet" href="../chrome.css">
+</head>
+<body>
+<header class="sim-chrome-header">
+<a class="chrome-brand" href="../../index.html"><span class="chrome-badge">CySA+</span><span class="chrome-lab">Analyst Training Lab</span></a>
+<nav class="chrome-nav" aria-label="Breadcrumb"><span class="chrome-prompt">&gt;</span><a href="../../index.html">Lab Home</a><span class="chrome-sep">/</span><span class="chrome-current">Interactive Email Header Analyzer</span></nav>
+<a class="chrome-back" href="../../index.html">&#8592; Back to Lab</a>
+</header>
+
+<div class="container">
+    <h1>CySA+ Dual-Perspective Email Analyzer</h1>
+    <p><strong>Scenario:</strong> A user reports a potential phishing attempt. Click on the highlighted technical items in the <strong>Raw Transit Header (Center Panel)</strong> to discover what they signify, see how they hide in the <strong>User Mailbox View (Left Panel)</strong>, and determine your operational response strategy.</p>
+
+    <div class="workspace-grid">
+        
+        <div class="panel">
+            <div class="panel-title">1. User Mailbox View (Visual Layer)</div>
+            <div class="webmail-client">
+                <div class="webmail-header">
+                    <div class="webmail-subject">URGENT: Mandatory Password Reset Required Immediately</div>
+                    <div class="webmail-meta-line" id="viewFrom">
+                        <strong>From:</strong> <span class="sync-highlight" id="uiFrom">"IT Support Desk" &lt;admin@yourcorporate.com&gt;</span>
+                    </div>
+                    <div class="webmail-meta-line">
+                        <strong>To:</strong> victim@yourcorporate.com
+                    </div>
+                    <div class="webmail-meta-line">
+                        <strong>Date:</strong> May 21, 2026, 11:11 AM
+                    </div>
+                </div>
+                <div class="webmail-body">
+                    <p>Dear Employee,</p>
+                    <p>Our corporate identity systems detected suspicious activity on your endpoint device. To preserve network authentication access, you must sync and re-verify your password within the next 2 hours.</p>
+                    <p>Failure to comply will result in an immediate administrative lockout.</p>
+                    
+                    <a href="#" class="phish-btn sync-highlight" id="uiLink" onclick="triggerPhishPopup(); return false;">Reset Password Here</a>
+                    
+                    <p style="margin-top:30px; font-size:12px; color:#888;">This is an automated operational system notification. Please do not reply directly to this mailer.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">2. Raw Mail Gateway Metadata (Ground Truth)</div>
+            <div class="raw-console">
+<span class="header-line" id="line-routing" onclick="triage('routing')">Delivered-To: victim@yourcorporate.com
+Received: from mailgateway.yourcorporate.com (192.168.10.25) by
+ internal-mailbox-cluster; Thu, 21 May 2026 04:12:22 -0700</span><span class="header-line c-spf" id="line-spf" onclick="triage('spf')">Received-SPF: fail (gateway-filter: domain of alerts@secure-logins-update.com does not designate 192.0.2.55 as permitted sender) client-ip=192.0.2.55;</span><span class="header-line c-dmarc" id="line-dmarc" onclick="triage('dmarc')">Authentication-Results: gateway.yourcorporate.com;
+       spf=fail (sender IP 192.0.2.55 is unauthorized);
+       dkim=pass header.i=@secure-logins-update.com;
+       dmarc=fail (p=NONE) header.from=yourcorporate.com;</span><span class="header-line c-dkim" id="line-dkim" onclick="triage('dkim')">DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+       d=secure-logins-update.com; s=sig2026;
+       h=from:to:subject:date;
+       bh=47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=;</span><span class="header-line c-from" id="line-from" onclick="triage('from')">From: "IT Support Desk" &lt;admin@yourcorporate.com&gt;</span><span class="header-line" id="line-basic" onclick="triage('basic')">To: victim@yourcorporate.com
+Subject: URGENT: Mandatory Password Reset Required Immediately
+Date: Thu, 21 May 2026 11:11:04 +0000
+Content-Type: text/html; charset="UTF-8"</span><span class="header-line c-link" id="line-link" onclick="triage('link')">&lt;html&gt;
+ &lt;a href="http://login.yourcorporate.com.secure-logins-update.com/auth"&gt;
+   Reset Password Here
+ &lt;/a&gt;
+&lt;/html&gt;</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">3. Tactical Triage Console</div>
+            <div class="triage-content" id="triageConsole">
+                <div style="text-align: center; margin-top: 100px; color: var(--text-muted);">
+                    <p style="font-size: 48px; margin: 0;">🔍</p>
+                    <p>Select any line of metadata from the center panel to run an expert incident analysis.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function triggerPhishPopup() {
+        alert(
+            "❌ NO-GO AT THIS STATION! ❌\n\n" +
+            "You just clicked the malicious link and let the attackers straight through the front door!\n\n" +
+            "Don't panic—this is just a safe training lab. However, in a real Security Operations Center, an analyst would be revoking your active session and starting an Incident Response investigation right now.\n\n" +
+            "Take a close look at the center panel to see how we catch this trap before clicking!"
+        );
+    }
+
+    const database = {
+        routing: {
+            uiTarget: null,
+            title: "Mail Route Metadata (Received Paths)",
+            analogy: "The postal ink stamp applied by sorting facilities on the back of a physical envelope as it moves from city to city.",
+            threat: "<strong>Tracking the Source:</strong> This tracking block logs every server that handled the message. While this line looks normal, security analysts review the earliest 'Received' hops at the very bottom of headers to pinpoint the exact network location where an email originated.",
+            mitigation: "Configure internal email infrastructure to accurately log transit routes and log metadata to a central SIEM to detect anomalies in mail flows."
+        },
+        spf: {
+            uiTarget: null,
+            title: "SPF (Sender Policy Framework) Failure",
+            analogy: "A company publishing a public directory listing its official delivery drivers. A driver shows up claiming to represent that company, but their name is completely missing from the directory.",
+            threat: "<strong>Unauthorized Server Delivery:</strong> The server that sent this message (<code>192.0.2.55</code>) is not authorized by the domain owner to send mail on their behalf. This is a massive technical indicator that the email is a forgery.",
+            mitigation: "Configure the secure email gateway (SEG) to check incoming traffic for SPF and flag or block messages that trigger a hard failure status."
+        },
+        dkim: {
+            uiTarget: null,
+            title: "DKIM (DomainKeys Identified Mail) Signature",
+            analogy: "A wax seal stamped onto an official envelope. The wax seal is completely real and untampered with—but the logo pressed into the wax belongs to a total stranger, not the person named on the return address.",
+            threat: "<strong>Attacker-Owned Keys:</strong> The content hasn't been altered in transit, which makes the check 'Pass.' However, it was signed using the <em>attacker's</em> private key for their own malicious domain (<code>secure-logins-update.com</code>), completely exposing the deception.",
+            mitigation: "Train security rules to verify that the domain name used in the cryptographic DKIM signature explicitly matches the domain the user sees in their mailbox client."
+        },
+        dmarc: {
+            uiTarget: null,
+            title: "DMARC Alignment Failure",
+            analogy: "An office security guard verifying badges. If the name written on your outer uniform badge doesn't match the hidden digital name encoded inside your keycard's chip, the guard soundly flags the conflict.",
+            threat: "<strong>Alignment Misalignment:</strong> DMARC fails because the visible 'From' domain handles a different brand than the backend validation path. Critically, because the policy is set to monitor-only (<code>p=NONE</code>), our gateway allowed the malicious message directly into the user's inbox instead of dropping it.",
+            mitigation: "<strong>Core Exam Strategy:</strong> Update organizational DMARC records from a passive monitoring state (<code>p=NONE</code>) to strict security enforcement policies like <code>p=QUARANTINE</code> or <code>p=REJECT</code> to automatically destroy fraudulent emails."
+        },
+        from: {
+            uiTarget: "uiFrom",
+            title: "Visible 'From' Header Spoofing",
+            analogy: "Handwriting a corporate executive's corporate office return address on a letter envelope, despite slipping it into a public mailbox across town.",
+            threat: "<strong>Display Name Deception:</strong> Attackers forge user-facing fields because standard email apps show this text prominently while hiding the validation metadata underneath. They rely entirely on users trusting the text at face value.",
+            mitigation: "Configure your email gateway to automatically append a clear, colorful **External Sender Warning Banner** into the body of any incoming message crossing the network boundary."
+        },
+        link: {
+            uiTarget: "uiLink",
+            title: "Typosquatted Payload Link",
+            analogy: "A fake detour road sign. The text boldly says 'Main Entrance: Click Here,' but driving past that sign routes your car straight into an off-road capture station built to steal your keys.",
+            threat: "<strong>Subdomain Obfuscation:</strong> The attacker put a trusted domain name at the front of the web link to deceive eyes, but the true destination domain is <code>secure-logins-update.com</code> at the very end. This is a credential harvesting trap.",
+            mitigation: "Implement gateway link protections (such as URL rewriting and defanging systems) that analyze and scan links in real-time when clicked, and configure firewalls to block fresh, unvouched domains."
+        },
+        basic: {
+            uiTarget: null,
+            title: "Core Content & Urgency Hooks",
+            analogy: "An urgent notification banner flashed across an app window to demand your immediate attention.",
+            threat: "<strong>Social Engineering Trigger:</strong> The subject line intentionally uses high-stakes urgency tokens ('URGENT', 'Immediately') to induce panic, coercing users into breaking standard validation habits.",
+            mitigation: "Conduct regular, contextual phishing awareness training to help users spot systemic psychological triggers alongside technical warnings."
+        }
+    };
+
+    function triage(key) {
+        // Clear old states
+        document.querySelectorAll('.header-line').forEach(line => line.classList.remove('active'));
+        document.querySelectorAll('.sync-highlight').forEach(el => el.classList.remove('triggered-glow'));
+
+        // Highlight current raw text line
+        document.getElementById(`line-${key}`).classList.add('active');
+
+        // Sync with Graphical Inbox UI (if applicable)
+        const targetUiId = database[key].uiTarget;
+        if (targetUiId) {
+            document.getElementById(targetUiId).classList.add('triggered-glow');
+        }
+
+        // Populate Triage Insight Panel
+        const item = database[key];
+        const consolePanel = document.getElementById('triageConsole');
+        
+        consolePanel.innerHTML = `
+            <div class="info-card" style="border-left-color: var(--purple);">
+                <h4>📋 Component Under Review</h4>
+                <p style="color:#fff; font-weight:bold; font-size:15px;">${item.title}</p>
+            </div>
+            
+            <div class="info-card" style="border-left-color: var(--accent);">
+                <h4>💡 \"Think of it as...\"</h4>
+                <p><em>${item.analogy}</em></p>
+            </div>
+
+            <div class="info-card" style="border-left-color: var(--danger);">
+                <h4>⚡ Threat / Indicator Noticed</h4>
+                <p>${item.threat}</p>
+            </div>
+
+            <div class="info-card" style="border-left-color: var(--success);">
+                <h4>🛠️ Analyst Remediation Strategy</h4>
+                <p>${item.mitigation}</p>
+            </div>
+        `;
+    }
+</script>
+
+<footer class="sim-chrome-footer">
+<span>CySA+ Analyst Training Lab</span><span class="chrome-footer-sep">&middot;</span><span>Instructor-created practice content</span><span class="chrome-footer-sep">&middot;</span><a href="../../index.html">&#8592; All Simulations</a>
+</footer>
+</body>
+</html>
