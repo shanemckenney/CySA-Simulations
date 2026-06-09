@@ -110,3 +110,64 @@
   .sim-chrome-header   { justify-content: space-between; }
   .sim-chrome-footer   { flex-direction: column; gap: 4px; text-align: center; }
 }
+
+
+/* =============================================================
+   Design system override
+   Loaded after each simulation's own <style> block, so these
+   :root variable definitions win the cascade and unify all
+   simulations to the landing page palette without touching
+   any simulation's HTML or interactive JavaScript.
+   ============================================================= */
+
+:root {
+  /* ── Page background ──────────────────────────────────────── */
+  --bg:      #070b14;
+  --bg-soft: #0d1424;
+
+  /* ── Panel / card surfaces (covers all naming conventions) ── */
+  --panel:   #111d35;
+  --panel2:  #0d1424;
+  --card:    #111d35;
+  --surface: #0d1424;
+
+  /* ── Text ─────────────────────────────────────────────────── */
+  --text:  #e2e8f0;   /* primary */
+  --ink:   #e2e8f0;   /* alias used by some sims */
+  --muted: #64748b;   /* secondary */
+
+  /* ── Borders ──────────────────────────────────────────────── */
+  --border: rgba(0, 229, 160, 0.15);
+  --line:   rgba(0, 229, 160, 0.15);  /* alias used by some sims */
+
+  /* ── Accent colors ────────────────────────────────────────── */
+  --accent:  #00e5a0;
+  --accent2: #38bdf8;
+
+  /* ── Semantic status colors (tuned for dark backgrounds) ───── */
+  --good: #00e5a0;   /* success / correct */
+  --bad:  #f87171;   /* danger / incorrect */
+  --warn: #fbbf24;   /* caution / partial */
+
+  /* ── Depth ────────────────────────────────────────────────── */
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --radius: 14px;
+}
+
+/* ── Body background matches landing page ────────────────────── */
+body {
+  background:
+    radial-gradient(circle at top left,  rgba(0, 229, 160, 0.07), transparent 35%),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.09), transparent 35%),
+    #070b14;
+  color: #e2e8f0;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────── */
+::-webkit-scrollbar              { width: 8px; height: 8px; }
+::-webkit-scrollbar-track        { background: #0d1424; }
+::-webkit-scrollbar-thumb        { background: rgba(0, 229, 160, 0.28); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover  { background: rgba(0, 229, 160, 0.48); }
+
+/* ── Text selection ──────────────────────────────────────────── */
+::selection { background: rgba(0, 229, 160, 0.25); color: #e2e8f0; }
