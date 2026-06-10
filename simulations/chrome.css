@@ -17,6 +17,8 @@
   top: 0;
   z-index: 9999;
   box-sizing: border-box;
+  width: 100%;
+  align-self: stretch;
 }
 
 .chrome-brand {
@@ -97,6 +99,8 @@
   font-family: 'Courier New', ui-monospace, monospace;
   font-size: 0.78rem;
   color: #475569;
+  width: 100%;
+  align-self: stretch;
 }
 
 .sim-chrome-footer a { color: #64748b; text-decoration: none; }
