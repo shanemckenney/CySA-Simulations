@@ -177,8 +177,8 @@
     /* ── Filter bar ────────────────────────────────────────────────────────── */
     .filter-bar {
       display: flex;
-      gap: 8px;
-      align-items: center;
+      flex-direction: column;
+      gap: 10px;
       position: sticky;
       top: 0;
       z-index: 100;
@@ -191,21 +191,28 @@
       border-top: 1px solid rgba(255,255,255,0.04);
     }
 
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
     .filter-label {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-family: 'Courier New', ui-monospace, monospace;
       color: var(--muted);
-      margin-right: 2px;
       white-space: nowrap;
+      min-width: 80px;
     }
 
     .filter-btn {
-      padding: 6px 15px;
+      padding: 5px 13px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.1);
       background: rgba(255,255,255,0.04);
       color: var(--muted);
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.15s ease;
@@ -215,16 +222,40 @@
 
     .filter-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); background: rgba(255,255,255,0.07); }
 
+    /* Difficulty filter active states */
     .filter-btn[data-filter="all"].active    { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: var(--text); }
     .filter-btn[data-filter="guided"].active { background: rgba(0,229,160,0.1); border-color: rgba(0,229,160,0.35); color: #00e5a0; }
     .filter-btn[data-filter="intermediate"].active { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.3); color: #fbbf24; }
     .filter-btn[data-filter="advanced"].active { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); color: #f87171; }
+
+    /* Exam priority filter active states */
+    .priority-btn[data-priority="all"].active         { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: var(--text); }
+    .priority-btn[data-priority="crucial"].active     { background: rgba(251,191,36,0.12); border-color: rgba(251,191,36,0.4); color: #fbbf24; }
+    .priority-btn[data-priority="fundamental"].active { background: rgba(129,140,248,0.1); border-color: rgba(129,140,248,0.35); color: #818cf8; }
+    .priority-btn[data-priority="know"].active        { background: rgba(100,116,139,0.12); border-color: rgba(100,116,139,0.3); color: #94a3b8; }
 
     .filter-count {
       margin-left: auto;
       font-size: 0.75rem;
       font-family: 'Courier New', ui-monospace, monospace;
       color: var(--muted);
+    }
+
+    /* ── Exam priority meta badges ─────────────────────────────────────────── */
+    .exam-crucial {
+      background: rgba(251, 191, 36, 0.1) !important;
+      color: #fbbf24 !important;
+      border-color: rgba(251, 191, 36, 0.3) !important;
+    }
+    .exam-fundamental {
+      background: rgba(129, 140, 248, 0.08) !important;
+      color: #818cf8 !important;
+      border-color: rgba(129, 140, 248, 0.25) !important;
+    }
+    .exam-know {
+      background: rgba(100, 116, 139, 0.07) !important;
+      color: #64748b !important;
+      border-color: rgba(100, 116, 139, 0.2) !important;
     }
 
     /* ── Domain sections ───────────────────────────────────────────────────── */
@@ -600,13 +631,22 @@
         </div>
       </div>
 
-      <div class="filter-bar" role="toolbar" aria-label="Filter by difficulty">
-        <span class="filter-label">Filter:</span>
-        <button class="filter-btn active" data-filter="all">All Labs</button>
-        <button class="filter-btn" data-filter="guided">Guided</button>
-        <button class="filter-btn" data-filter="intermediate">Intermediate</button>
-        <button class="filter-btn" data-filter="advanced">Advanced</button>
-        <span class="filter-count" id="filter-count">13 labs</span>
+      <div class="filter-bar" role="toolbar" aria-label="Filter labs">
+        <div class="filter-row">
+          <span class="filter-label">Difficulty:</span>
+          <button class="filter-btn active" data-filter="all">All Labs</button>
+          <button class="filter-btn" data-filter="guided">Guided</button>
+          <button class="filter-btn" data-filter="intermediate">Intermediate</button>
+          <button class="filter-btn" data-filter="advanced">Advanced</button>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Exam Focus:</span>
+          <button class="filter-btn priority-btn active" data-priority="all">All</button>
+          <button class="filter-btn priority-btn" data-priority="crucial">&#9733; Crucial</button>
+          <button class="filter-btn priority-btn" data-priority="fundamental">Fundamental</button>
+          <button class="filter-btn priority-btn" data-priority="know">Good to Know</button>
+          <span class="filter-count" id="filter-count">13 labs</span>
+        </div>
       </div>
 
       <!-- ══════════════════════════════════════════════════════════════════
@@ -627,7 +667,7 @@
 
         <div class="grid">
 
-          <article class="card" data-difficulty="guided">
+          <article class="card" data-difficulty="guided" data-priority="crucial">
             <div class="card-top">
               <div class="icon">&#128202;</div>
               <div class="card-badges">
@@ -639,6 +679,7 @@
             <h3>SOC Log Correlation Foundations</h3>
             <p>Learn to correlate log entries across multiple sources to identify attack patterns and build an accurate event timeline.</p>
             <div class="meta">
+              <span class="exam-crucial">&#9733; Crucial</span>
               <span>Log Analysis</span>
               <span>SIEM</span>
               <span>10&ndash;15 min</span>
@@ -646,7 +687,7 @@
             <a class="launch" href="simulations/soc-log-correlation/foundations/">Launch Lab &#8594;</a>
           </article>
 
-          <article class="card" data-difficulty="intermediate">
+          <article class="card" data-difficulty="intermediate" data-priority="crucial">
             <div class="card-top">
               <div class="icon">&#128270;</div>
               <div class="card-badges">
@@ -657,6 +698,7 @@
             <h3>SIEM Log Sifter Challenge</h3>
             <p>Filter and analyze a noisy SIEM event feed to surface true positives, reduce alert fatigue, and document analyst findings.</p>
             <div class="meta">
+              <span class="exam-crucial">&#9733; Crucial</span>
               <span>SIEM</span>
               <span>Log Analysis</span>
               <span>15&ndash;20 min</span>
@@ -664,7 +706,7 @@
             <a class="launch" href="simulations/siem-log-sifter/">Launch Lab &#8594;</a>
           </article>
 
-          <article class="card" data-difficulty="intermediate">
+          <article class="card" data-difficulty="intermediate" data-priority="fundamental">
             <div class="card-top">
               <div class="icon">&#128200;</div>
               <div class="card-badges">
@@ -675,6 +717,7 @@
             <h3>Resource Anomaly Correlation Lab</h3>
             <p>Correlate CPU, memory, and network resource spikes with event logs to identify anomaly sources and likely causes.</p>
             <div class="meta">
+              <span class="exam-fundamental">Fundamental</span>
               <span>Anomaly Detection</span>
               <span>Monitoring</span>
               <span>10&ndash;15 min</span>
@@ -682,7 +725,7 @@
             <a class="launch" href="simulations/resource-anomaly-correlation/">Launch Lab &#8594;</a>
           </article>
 
-          <article class="card" data-difficulty="advanced">
+          <article class="card" data-difficulty="advanced" data-priority="fundamental">
             <div class="card-top">
               <div class="icon">&#129521;</div>
               <div class="card-badges">
@@ -693,6 +736,7 @@
             <h3>Advanced SOC Log Correlation &amp; Threat Scoping</h3>
             <p>Perform deep multi-source log correlation across a complex network to scope a threat actor&rsquo;s lateral movement and establish a full attack timeline.</p>
             <div class="meta">
+              <span class="exam-fundamental">Fundamental</span>
               <span>Log Analysis</span>
               <span>SIEM</span>
               <span>20&ndash;30 min</span>
@@ -721,7 +765,7 @@
 
         <div class="grid">
 
-          <article class="card" data-difficulty="intermediate">
+          <article class="card" data-difficulty="intermediate" data-priority="fundamental">
             <div class="card-top">
               <div class="icon">&#128269;</div>
               <div class="card-badges">
@@ -732,6 +776,7 @@
             <h3>IOC Triage &mdash; Analyst Decision Lab</h3>
             <p>Evaluate indicators of compromise, prioritize threats by risk, and make triage decisions under realistic analyst conditions.</p>
             <div class="meta">
+              <span class="exam-fundamental">Fundamental</span>
               <span>Threat Intel</span>
               <span>IOCs</span>
               <span>10&ndash;15 min</span>
@@ -760,7 +805,7 @@
 
         <div class="grid">
 
-          <article class="card" data-difficulty="guided">
+          <article class="card" data-difficulty="guided" data-priority="crucial">
             <div class="card-top">
               <div class="icon">&#127915;</div>
               <div class="card-badges">
@@ -772,6 +817,7 @@
             <h3>Security Incident Ticket Analysis</h3>
             <p>Analyze a security incident ticket, classify severity, and select the correct escalation and remediation actions.</p>
             <div class="meta">
+              <span class="exam-crucial">&#9733; Crucial</span>
               <span>Incident Response</span>
               <span>ITSM</span>
               <span>10&ndash;15 min</span>
@@ -779,7 +825,7 @@
             <a class="launch" href="simulations/incident-ticket-analysis/">Launch Lab &#8594;</a>
           </article>
 
-          <article class="card" data-difficulty="advanced">
+          <article class="card" data-difficulty="advanced" data-priority="fundamental">
             <div class="card-top">
               <div class="icon">&#9939;</div>
               <div class="card-badges">
@@ -790,6 +836,7 @@
             <h3>Attack Lifecycle Identification (Kill Chain)</h3>
             <p>Map attacker TTPs across the full cyber kill chain and MITRE ATT&amp;CK framework from initial access through exfiltration.</p>
             <div class="meta">
+              <span class="exam-fundamental">Fundamental</span>
               <span>Kill Chain</span>
               <span>ATT&amp;CK</span>
               <span>20&ndash;25 min</span>
@@ -797,7 +844,7 @@
             <a class="launch" href="simulations/kill-chain/attack-lifecycle/">Launch Lab &#8594;</a>
           </article>
 
-          <article class="card" data-difficulty="advanced">
+          <article class="card" data-difficulty="advanced" data-priority="fundamental">
             <div class="card-top">
               <div class="icon">&#128279;</div>
               <div class="card-badges">
@@ -808,6 +855,7 @@
             <h3>Incident Kill Chain Analysis</h3>
             <p>Reconstruct a complete incident by tracing threat actor actions through each stage of the kill chain using real evidence artifacts.</p>
             <div class="meta">
+              <span class="exam-fundamental">Fundamental</span>
               <span>Kill Chain</span>
               <span>Incident Response</span>
               <span>20&ndash;25 min</span>
@@ -836,7 +884,7 @@
 
         <div class="grid">
 
-          <article class="card" data-difficulty="intermediate">
+          <article class="card" data-difficulty="intermediate" data-priority="fundamental">
             <div class="card-top">
               <div class="icon">&#9889;</div>
               <div class="card-badges">
@@ -847,6 +895,7 @@
             <h3>Software Vulnerability Sandbox</h3>
             <p>Execute live exploit payloads for SQL Injection, XSS, Path Traversal, SSRF, CSRF, and RCE &mdash; then deploy the architectural patches that shut each attack vector down.</p>
             <div class="meta">
+              <span class="exam-fundamental">Fundamental</span>
               <span>Web Security</span>
               <span>OWASP</span>
               <span>15&ndash;20 min</span>
@@ -854,7 +903,7 @@
             <a class="launch" href="simulations/software-vulnerability-sandbox/">Launch Lab &#8594;</a>
           </article>
 
-          <article class="card" data-difficulty="advanced">
+          <article class="card" data-difficulty="advanced" data-priority="crucial">
             <div class="card-top">
               <div class="icon">&#128300;</div>
               <div class="card-badges">
@@ -865,6 +914,7 @@
             <h3>Vulnerability Prioritization &amp; Remediation Lab</h3>
             <p>Five vulnerabilities have been flagged across your environment. CVSS score alone does not determine priority &mdash; asset criticality, active exploitation, and compensating controls all factor in.</p>
             <div class="meta">
+              <span class="exam-crucial">&#9733; Crucial</span>
               <span>CVSS</span>
               <span>Asset Risk</span>
               <span>15&ndash;20 min</span>
@@ -872,7 +922,7 @@
             <a class="launch" href="simulations/vulnerability-prioritization-remediation/">Launch Lab &#8594;</a>
           </article>
 
-          <article class="card" data-difficulty="advanced">
+          <article class="card" data-difficulty="advanced" data-priority="crucial">
             <div class="card-top">
               <div class="icon">&#127919;</div>
               <div class="card-badges">
@@ -883,6 +933,7 @@
             <h3>OWASP Top 10 &amp; CVSS Triage Simulator</h3>
             <p>Work through 10 scenario-driven cases, mapping findings to OWASP categories, calibrating CVSS 3.1 base and temporal metrics, and selecting the correct incident response containment actions.</p>
             <div class="meta">
+              <span class="exam-crucial">&#9733; Crucial</span>
               <span>OWASP Top 10</span>
               <span>CVSS 3.1</span>
               <span>20&ndash;30 min</span>
@@ -911,7 +962,7 @@
 
         <div class="grid">
 
-          <article class="card" data-difficulty="advanced">
+          <article class="card" data-difficulty="advanced" data-priority="know">
             <div class="card-top">
               <div class="icon">&#128187;</div>
               <div class="card-badges">
@@ -922,6 +973,7 @@
             <h3>Endpoint Behavioral Analysis</h3>
             <p>Examine process trees, persistence mechanisms, and behavioral artifacts to identify and scope compromised endpoints.</p>
             <div class="meta">
+              <span class="exam-know">Good to Know</span>
               <span>Endpoint</span>
               <span>Process Analysis</span>
               <span>15&ndash;20 min</span>
@@ -929,7 +981,7 @@
             <a class="launch" href="simulations/endpoint-behavioral-analysis/">Launch Lab &#8594;</a>
           </article>
 
-          <article class="card" data-difficulty="intermediate">
+          <article class="card" data-difficulty="intermediate" data-priority="know">
             <div class="card-top">
               <div class="icon">&#128231;</div>
               <div class="card-badges">
@@ -940,6 +992,7 @@
             <h3>Interactive Email Header Analyzer</h3>
             <p>Dissect raw email headers to identify spoofed senders, trace routing hops, and detect phishing artifacts.</p>
             <div class="meta">
+              <span class="exam-know">Good to Know</span>
               <span>Email Security</span>
               <span>Phishing</span>
               <span>10&ndash;15 min</span>
@@ -968,31 +1021,46 @@
 
   <script>
     (function () {
-      var buttons = document.querySelectorAll('.filter-btn');
-      var cards   = document.querySelectorAll('.card');
-      var sections = document.querySelectorAll('.domain-section');
-      var countEl  = document.getElementById('filter-count');
+      var diffBtns  = document.querySelectorAll('.filter-btn:not(.priority-btn)');
+      var priBtns   = document.querySelectorAll('.priority-btn');
+      var cards     = document.querySelectorAll('.card');
+      var sections  = document.querySelectorAll('.domain-section');
+      var countEl   = document.getElementById('filter-count');
 
-      buttons.forEach(function (btn) {
+      var diffFilter = 'all';
+      var priFilter  = 'all';
+
+      function applyFilters() {
+        var visible = 0;
+        cards.forEach(function (card) {
+          var diffOk = diffFilter === 'all' || card.dataset.difficulty === diffFilter;
+          var priOk  = priFilter  === 'all' || card.dataset.priority   === priFilter;
+          var show   = diffOk && priOk;
+          card.classList.toggle('hidden', !show);
+          if (show) visible++;
+        });
+        sections.forEach(function (section) {
+          var hasVisible = section.querySelectorAll('.card:not(.hidden)').length > 0;
+          section.classList.toggle('hidden', !hasVisible);
+        });
+        countEl.textContent = visible + (visible === 1 ? ' lab' : ' labs');
+      }
+
+      diffBtns.forEach(function (btn) {
         btn.addEventListener('click', function () {
-          var filter = btn.dataset.filter;
-
-          buttons.forEach(function (b) { b.classList.remove('active'); });
+          diffFilter = btn.dataset.filter;
+          diffBtns.forEach(function (b) { b.classList.remove('active'); });
           btn.classList.add('active');
+          applyFilters();
+        });
+      });
 
-          var visible = 0;
-          cards.forEach(function (card) {
-            var match = filter === 'all' || card.dataset.difficulty === filter;
-            card.classList.toggle('hidden', !match);
-            if (match) visible++;
-          });
-
-          sections.forEach(function (section) {
-            var hasVisible = section.querySelectorAll('.card:not(.hidden)').length > 0;
-            section.classList.toggle('hidden', !hasVisible);
-          });
-
-          countEl.textContent = visible + (visible === 1 ? ' lab' : ' labs');
+      priBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          priFilter = btn.dataset.priority;
+          priBtns.forEach(function (b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          applyFilters();
         });
       });
     })();
