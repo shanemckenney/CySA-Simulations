@@ -204,9 +204,7 @@ Students work through a prioritized remediation workflow, balancing CVSS scores,
 
 These simulations are built around an applied learning model:
 
-```
 Scenario exposure → Student action → Immediate feedback → Explanation → Retry
-```
 
 Each activity is designed to give students a practical decision-making experience rather than a passive review experience.
 
