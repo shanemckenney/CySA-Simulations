@@ -102,7 +102,6 @@
       background-color: rgba(15,23,48,.98);
       color: var(--ink);
     }
-    /* Selected/hovered option (browser support varies; harmless if ignored) */
     select option:checked,
     select option:hover{
       background-color: rgba(122,162,255,.28);
@@ -738,7 +737,7 @@ const SCENARIOS = [
 
 let state = {
   mode: "practice",
-  currentScenarioId: 1,
+  currentScenarioId: null,     // Will be dynamically set after shuffle
   attempts: {},        // scenarioId -> attempts count
   answered: {},        // scenarioId -> { selected, correct, locked }
   correctCount: 0
@@ -751,6 +750,20 @@ let state = {
 const $ = (id) => document.getElementById(id);
 
 function init() {
+  // Shuffle SCENARIOS using Fisher-Yates
+  for (let i = SCENARIOS.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [SCENARIOS[i], SCENARIOS[j]] = [SCENARIOS[j], SCENARIOS[i]];
+  }
+
+  // Rename titles so they appear logically sequential to the user
+  SCENARIOS.forEach((s, idx) => {
+    s.title = `Scenario ${idx + 1}`;
+  });
+
+  // Dynamically set starting state to the first item in the new shuffled array
+  state.currentScenarioId = SCENARIOS[0].id;
+
   // Build scenario dropdown
   const sel = $("scenarioSel");
   sel.innerHTML = "";
